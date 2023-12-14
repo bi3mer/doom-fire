@@ -42,15 +42,18 @@ class DoomFire {
   width: number
   height: number
   pixels: number[]
-  colors: ImageData
+  ctx: CanvasRenderingContext2D
+  imageData: imageData
 
   constructor() {
-    this.width = 720;
-    this.height = 480;
+    this.width = 500;
+    this.height = 100;
     this.pixels = new Array(this.width * this.height).fill(0);
 
     const canvas = document.getElementById('canvas')! as HTMLCanvasElement;
-    this.colors = canvas.getContext("2d")!.getImageData(0, 0, this.width, this.height);
+    // this.ctx = canvas.getContext('2d');
+    this.ctx = canvas.getContext('2d', { willReadFrequently: true });
+    this.imageData = this.ctx.createImageData(this.width, this.height);
 
     // populate bottom row with white color
     const H = (this.height - 1) * this.width;
@@ -59,37 +62,43 @@ class DoomFire {
     }
   }
 
-  doFire() {
-    for (let x = 0; x < this.width; x++) {
-      for (let y = 1; y < this.height; y++) {
-        this.spreadFire(y * this.width + x);
+  update() {
+    const wind = Number(document.getElementById("wind")!.value) + 1;
+    for (let x = 0; x < this.width; ++x) {
+      for (let y = 1; y < this.height; ++y) { // bottom row is always pure white
+        const rand = Math.round(Math.random() * 3.0) & 3;
+        const from = y * this.width + x;
+        const to = from - this.width - rand + wind;
+        this.pixels[to] = this.pixels[from] - (rand & 1);
       }
     }
   }
 
-  spreadFire(from: number) {
-    let to = from - this.width;
-    this.pixels[to] = this.pixels[from] - 2;
+  render() {
+    for (let y = 0; y < this.height; ++y) {
+      const offset = y * this.width;
+      for (let x = 0; x < this.width; ++x) {
+        const index = offset + x;
+        const colorIndex = this.pixels[offset + x] * 3;
+
+        this.imageData.data[index * 4] = FIRE_RGB[colorIndex];
+        this.imageData.data[index * 4 + 1] = FIRE_RGB[colorIndex + 1];
+        this.imageData.data[index * 4 + 2] = FIRE_RGB[colorIndex + 2];
+        this.imageData.data[index * 4 + 3] = 255;
+      }
+    }
+
+    this.ctx.putImageData(this.imageData, 0, 0);
   }
 
   run() {
-    const updateFunc = () => {
-      // this.doFire();
+    const frame = () => {
+      this.update();
+      this.render();
+      window.requestAnimationFrame(frame);
+    };
 
-      for (let y = 0; y < this.height; ++y) {
-        const offset = y * this.width;
-        for (let x = 0; x < this.width; ++x) {
-          const index = this.pixels[offset + x];
-          this.colors.data[this.width * y + x] = FIRE_RGB[index];
-          this.colors.data[this.width * y + x + 1] = FIRE_RGB[index + 1];
-          this.colors.data[this.width * y + x + 2] = FIRE_RGB[index + 2];
-        }
-      }
-
-      window.requestAnimationFrame(updateFunc);
-    }
-
-    window.requestAnimationFrame(updateFunc)
+    setTimeout(frame, 50);
   }
 }
 
