@@ -1,0 +1,17 @@
+{
+  "name": "doom-fire",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/web": "^0.0.116",
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "build": "bun build index.ts --outfile out.js",
+    "watch": "bun build index.ts --outfile out.js --watch",
+    "prod": "bun build index.ts --outfile out.js --minify"
+  }
+}
